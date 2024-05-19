@@ -1,0 +1,216 @@
+Investigate With SQL
+
+/* 
+On October 23rd, 2021 Kehinde Wiley's, infamous painting, "Napoleon Leading the Army Over the Alps" 
+was stolen from the New York City Metropolitan Museum of Art. The only evidence that the authorities 
+have is a digital evidence file containing flight, bank, cell phone and other related data. 
+Because of a lack of expertise, the authorities have been unable to analyze the file to make any headway 
+in the case. Now, this is where you and I come in. Together we are the last and only resort for cracking 
+the case. We're going to work together and use our SQL data skills to do four specific things. 
+
+1. Analyze the data.
+2. Gather evidence.
+3. Find the thieves and the painting..
+
+Link to the databases: https://wsdalearning.ai/sqleditor/
+
+*/
+
+-- Do we have anyone in our databse who resides in NYC?
+
+SELECT *
+FROM customer_details
+WHERE city = 'New York City'
+
+id	firstName	city	age	LastName
+32	Barry	New York City	35	Allen
+38	Opra	New York City	43	Baker
+
+-- Do we have a detail of people who flew to NYC?
+
+SELECT
+    id,
+    customer_id,
+    start_city,
+    dest_city,
+    flightdate,
+    CONCAT(CusFName, ' ', CusLName) AS FullName
+FROM
+    flight_details
+WHERE dest_city = 'New York City' AND flightdate <= '2021-10-23'
+GROUP BY
+    id, customer_id, start_city, dest_city, flightdate, FullName
+
+
+
+id	customer_id	start_city	dest_city	flightDate	FullName
+100	100	Puerto Princesa	New York City	2021-10-20 08:00:00	Bruce Fisher
+102	105	Ouagadougou	New York City	2021-10-21 08:00:00	Aleana Jordan
+104	106	Karatsu	New York City	2021-10-21 08:00:00	Brenda Reynolds
+
+
+
+-- Do we have a detail of people who flew from NYC after the crime?
+
+SELECT
+    id,
+    customer_id,
+    start_city,
+    dest_city,
+    flightdate,
+    CONCAT(CusFName, ' ', CusLName) AS FullName
+FROM
+    flight_details
+WHERE
+    start_city = 'New York City' AND flightdate >= '2021-10-23'
+GROUP BY
+    id, customer_id, start_city, dest_city, flightdate, FullName
+
+
+
+id	customer_id	start_city	dest_city	flightDate	FullName
+101	100	New York City	Puerto Princesa	2021-10-24 08:00:00	Bruce Fisher
+103	105	New York City	Moskow	2021-10-25 08:00:00	Aleana Jordan
+105	106	New York City	Karatsu	2021-10-24 08:00:00	Brenda Reynolds
+504	141	New York City	Tianjin	2021-10-31 00:00:00	Hajrah Burns
+
+
+/*
+So far these are the people of interest:
+
+id	firstName	LastName
+32	Barry		Allen
+38	Opra		Baker
+
+Pleople who flew and leave shorty after the crime
+
+id		FullName
+100		Bruce Fisher
+102		Aleana Jordan
+104		Brenda Reynolds
+
+*/
+
+-- Let's check the messages sent between the date of the crime
+
+SELECT
+   sender_id AS [Sender ID],
+   CONCAT(senderfname,' ', senderlname)AS [Sender Name],
+   receiver_id AS [Recipient ID],
+   CONCAT( recieverfname, ' ', recieverlname)AS [Recipient Name],
+   message AS [Text Message],
+   sent AS [Date Sent]
+ FROM
+   text_messages
+ WHERE
+   sent BETWEEN '2021-10-20' AND '2021-10-25'
+ ORDER BY 
+   sent
+
+-- Here is the result:
+
+Sender ID	Sender Name	Recipient ID	Recipient Name	Text Message	Date Sent
+20	Darryl White	28	Liisa Walker	Peace, break thee off look, where it comes again!	2021-10-20 07:01:35
+12	Tereasa Anderson	28	Liisa Walker	In the same figure, like the king thats dead.	2021-10-20 07:32:06
+20	Darryl White	28	Liisa Walker	Thou art a scholar speak to it, Horatio	2021-10-20 07:48:58
+12	Tereasa Anderson	28	Liisa Walker	Looks it not like the king? mark it, Horatio.	2021-10-20 08:35:59
+30	Hajra Hall	28	Liisa Walker	Most like: it harrows me with fear and wonder.	2021-10-20 08:42:54
+100	Bruce Fisher	106	Brenda Reynolds	Hey, I just landed in at JFK	2021-10-20 09:00:00
+12	Tereasa Anderson	28	Liisa Walker	It would be spoke to.	2021-10-21 07:31:38
+20	Darryl White	28	Liisa Walker	Question it, Horatio.	2021-10-21 07:40:40
+30	Hajra Hall	28	Liisa Walker	What art thou that usurpst this time of night	2021-10-21 07:54:50
+30	Hajra Hall	28	Liisa Walker	Together with that fair and warlike form	2021-10-21 08:11:24
+30	Hajra Hall	28	Liisa Walker	In which the majesty of buried Denmark	2021-10-21 08:16:31
+30	Hajra Hall	28	Liisa Walker	Did sometimes march? by heaven I charge thee, speak!	2021-10-21 08:40:30
+105	Aleana Jordan	102	Leonardo Coleman	Hi, I just arrived in NY. Going to go to my hotel room. Then I can come meet you.	2021-10-21 09:00:00
+106	Brenda Reynolds	100	Bruce Fisher	Yep me too. Let's meet later tonight, say 10pm at the museum and run through the plan again!	2021-10-21 09:01:00
+102	Leonardo Coleman	105	Aleana Jordan	Oh great! How was your flight? We could meet at 12 for lunch if you like	2021-10-21 09:10:00
+105	Aleana Jordan	102	Leonardo Coleman	Yeah, sounds great. Where should I meet you? My hotel is close to museum of modern art.	2021-10-21 09:15:00
+102	Leonardo Coleman	105	Aleana Jordan	Fine, 12 at c.p.?	2021-10-21 09:17:00
+105	Aleana Jordan	102	Leonardo Coleman	Cool, I'll meet you there	2021-10-21 09:30:00
+100	Bruce Fisher	106	Brenda Reynolds	OK. cu	2021-10-21 09:40:00
+100	Bruce Fisher	106	Brenda Reynolds	btw, I got great news. I found a buyer. $1,000,000. Can you say cha-ching!	2021-10-21 09:41:00
+106	Brenda Reynolds	100	Bruce Fisher	great!	2021-10-21 10:10:00
+20	Darryl White	28	Liisa Walker	It is offended.	2021-10-22 07:35:37
+12	Tereasa Anderson	28	Liisa Walker	See, it stalks away!	2021-10-22 07:36:38
+30	Hajra Hall	28	Liisa Walker	Stay! speak, speak! I charge thee, speak!	2021-10-22 07:48:21
+20	Darryl White	28	Liisa Walker	Tis gone, and will not answer.	2021-10-22 08:07:23
+12	Tereasa Anderson	28	Liisa Walker	How now, Horatio! you tremble and look pale:	2021-10-22 08:09:55
+12	Tereasa Anderson	28	Liisa Walker	Is not this something more than fantasy?	2021-10-22 08:23:09
+12	Tereasa Anderson	28	Liisa Walker	What think you ont?	2021-10-22 08:27:14
+30	Hajra Hall	28	Liisa Walker	Before my God, I might not this believe	2021-10-22 08:28:02
+30	Hajra Hall	28	Liisa Walker	Without the sensible and true avouch	2021-10-23 07:17:06
+30	Hajra Hall	28	Liisa Walker	Of mine own eyes.	2021-10-23 08:16:04
+20	Darryl White	28	Liisa Walker	Is it not like the king?	2021-10-23 08:19:27
+30	Hajra Hall	28	Liisa Walker	As thou art to thyself:	2021-10-24 07:02:58
+30	Hajra Hall	28	Liisa Walker	Such was the very armour he had on	2021-10-24 07:03:54
+30	Hajra Hall	28	Liisa Walker	When he the ambitious Norway combated	2021-10-24 07:12:37
+30	Hajra Hall	28	Liisa Walker	So frownd he once, when, in an angry parle	2021-10-24 07:19:21
+30	Hajra Hall	28	Liisa Walker	He smote the sledded Polacks on the ice.	2021-10-24 07:32:15
+30	Hajra Hall	28	Liisa Walker	Tis strange.	2021-10-24 07:32:42
+20	Darryl White	28	Liisa Walker	Thus twice before, and jump at this dead hour	2021-10-24 08:03:00
+20	Darryl White	28	Liisa Walker	With martial stalk hath he gone by our watch.	2021-10-24 08:18:16
+30	Hajra Hall	28	Liisa Walker	In what particular thought to work I know not	2021-10-24 08:22:59
+30	Hajra Hall	28	Liisa Walker	But in the gross and scope of my opinion	2021-10-24 08:23:40
+100	Bruce Fisher	106	Brenda Reynolds	This was a coup! I I got to say, I would have loved to keep the art to myselfe lol. Safe trip back and great score!	2021-10-24 09:10:00
+106	Brenda Reynolds	100	Bruce Fisher	To you too! Have a safe flight back.	2021-10-24 09:12:00
+
+-- We nee to check if there's someone from our previous queries
+
+SELECT
+   sender_id AS Sender_ID,
+   CONCAT(senderfname,' ', senderlname)AS Sender_Name,
+   receiver_id AS Recipient_ID,
+   CONCAT( recieverfname, ' ', recieverlname)AS Recipient_Name,
+   message AS Text_Message,
+   sent AS Date_Sent
+ FROM
+   text_messages
+ WHERE
+   sent BETWEEN '2021-10-20' AND '2021-10-25' AND Sender_ID IN (32,38,100,105,106)
+ ORDER BY 
+   sent
+
+Sender ID	Sender Name	Recipient ID	Recipient Name	Text Message	Date Sent
+100	Bruce Fisher	106	Brenda Reynolds	Hey, I just landed in at JFK	2021-10-20 09:00:00
+105	Aleana Jordan	102	Leonardo Coleman	Hi, I just arrived in NY. Going to go to my hotel room. Then I can come meet you.	2021-10-21 09:00:00
+106	Brenda Reynolds	100	Bruce Fisher	Yep me too. Let's meet later tonight, say 10pm at the museum and run through the plan again!	2021-10-21 09:01:00
+105	Aleana Jordan	102	Leonardo Coleman	Yeah, sounds great. Where should I meet you? My hotel is close to museum of modern art.	2021-10-21 09:15:00
+105	Aleana Jordan	102	Leonardo Coleman	Cool, I'll meet you there	2021-10-21 09:30:00
+100	Bruce Fisher	106	Brenda Reynolds	OK. cu	2021-10-21 09:40:00
+100	Bruce Fisher	106	Brenda Reynolds	btw, I got great news. I found a buyer. $1,000,000. Can you say cha-ching!	2021-10-21 09:41:00
+106	Brenda Reynolds	100	Bruce Fisher	great!	2021-10-21 10:10:00
+100	Bruce Fisher	106	Brenda Reynolds	This was a coup! I I got to say, I would have loved to keep the art to myselfe lol. Safe trip back and great score!	2021-10-24 09:10:00
+106	Brenda Reynolds	100	Bruce Fisher	To you too! Have a safe flight back.	2021-10-24 09:12:00
+
+/*
+
+Objective: Final step in the analytical journey to solve a case involving the theft of a painting.
+Method: Manual analysis of text messages to identify additional evidence and pinpoint the thieves.
+Query Focus: Text messages sent between October 20th and October 25th by the suspects identified previously.
+
+Analysis Process:
+Bruce and Brenda:
+Bruce arrived in New York on October 20th.
+Brenda arrived in New York and planned to meet Bruce at the museum on October 21st to "run through the plan."
+
+Subsequent messages confirmed their plans and involvement in the theft.
+Aleana and Leonardo:
+Aleana arrived in New York and planned to meet Leonardo, but these messages were less suspicious and neither were on the initial suspect list.
+
+Suspicious Messages:
+October 21st:
+Bruce confirmed to Brenda about finding a buyer for $1 million.
+Brenda confirmed the arrangement and plan.
+October 24th:
+Bruce boasted about the successful theft and mentioned the value of the art.
+Brenda wished Bruce a safe flight back.
+
+Conclusion:
+Bruce and Brenda are identified as the primary suspects.
+Evidence gathered from their messages strongly indicates their involvement in the theft.
+Analysis results are conclusive enough to be handed over to police authorities for making an arrest.
+
+
+
+*/
